@@ -3,6 +3,9 @@ const router = express.Router();
 const multer = require("multer");
 const Post = require("../models/post");
 const Interest = require("../models/Interest");
+const User = require("../models/userAuth");
+const Topic = require("../models/topic");
+const Community = require("../models/community");
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -169,6 +172,12 @@ async function uploadPostToS3({
 }) {
   console.log("Uploading file:", file);
 
+  let comId = "65f02ec130c7d8883d995e33";
+  const community = await Community.findById(comId);
+  let sender = "65d8fca73d35c3613a732d7c";
+  const user = await User.findById(sender);
+  let topic = "65f02ec130c7d8883d995e35";
+
   try {
     let pos = [];
 
@@ -192,24 +201,105 @@ async function uploadPostToS3({
       extension === ".jpeg" ||
       extension === ".png"
     ) {
-      contentType = "image/jpeg";
+      contentType = "image/jpg";
     } else {
-      contentType = "image/jpeg";
+      contentType = "image/jpg";
     }
 
     pos.push({ content: objectName, type: contentType });
 
     const post = new Post({
       title: textWithoutHashtags,
-      //desc: "sdfg",
-      community: "65f02ec130c7d8883d995e33",
-      sender: "65d8fca73d35c3613a732d7c",
+      community: comId,
+      sender: sender,
       post: pos,
       tags: hashtags,
-      topicId: "65f02ec130c7d8883d995e35",
+      topicId: topic,
       date: new Date(),
     });
-    await post.save();
+    const savedpost = await post.save();
+
+    //updating tags and interests
+    const int = await Interest.findOne({ title: category });
+
+    for (let i = 0; i < hashtags?.length; i++) {
+      const t = await Tag.findOne({ title: hashtags[i].toLowerCase() });
+
+      if (t) {
+        await Tag.updateOne(
+          { _id: t._id },
+          { $inc: { count: 1 }, $addToSet: { post: post._id } }
+        );
+        if (int) {
+          await Interest.updateOne(
+            { _id: int._id },
+            { $inc: { count: 1 }, $addToSet: { post: post._id, tags: t._id } }
+          );
+        }
+      } else {
+        const newtag = new Tag({
+          title: hashtags[i].toLowerCase(),
+          post: post._id,
+          count: 1,
+        });
+        await newtag.save();
+        if (int) {
+          await Interest.updateOne(
+            { _id: int._id },
+            {
+              $inc: { count: 1 },
+              $addToSet: { post: post._id, tags: newtag._id },
+            }
+          );
+        }
+      }
+    }
+
+    await Community.updateOne(
+      { _id: comId },
+      { $push: { posts: savedpost._id }, $inc: { totalposts: 1 } }
+    );
+    await Topic.updateOne(
+      { _id: topic },
+      { $push: { posts: savedpost._id }, $inc: { postcount: 1 } }
+    );
+
+    let tokens = [];
+
+    for (let u of community.members) {
+      const user = await User.findById(u);
+
+      if (user.notificationtoken && user._id.toString()) {
+        tokens.push(user.notificationtoken);
+      }
+    }
+
+    const timestamp = `${new Date()}`;
+    const msg = {
+      notification: {
+        title: `${community.title} - Posted!`,
+        body: `${post.title}`,
+      },
+      data: {
+        screen: "CommunityChat",
+        sender_fullname: `${user?.fullname}`,
+        sender_id: `${user?._id}`,
+        text: `${post.title}`,
+        comId: `${community?._id}`,
+        createdAt: `${timestamp}`,
+      },
+      tokens: tokens,
+    };
+
+    await admin
+      .messaging()
+      .sendMulticast(msg)
+      .then((response) => {
+        console.log("Successfully sent message");
+      })
+      .catch((error) => {
+        console.log("Error sending message:", error);
+      });
     fs.unlinkSync(file);
     fs.unlinkSync(textFilePath);
     console.log("Post uploaded and saved");
@@ -218,10 +308,10 @@ async function uploadPostToS3({
   }
 }
 
-// Every 3 hours
-cron.schedule("0 */3 * * *", () => {
+// Every 2 hours
+cron.schedule("0 */2 * * *", () => {
   console.log("Running file reading and processing task...");
-  readAndProcessFiles("./content/rvcjinsta");
+  readAndProcessFiles(directoryPath);
 });
 
 module.exports = router;
