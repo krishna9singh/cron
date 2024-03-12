@@ -272,42 +272,42 @@ async function uploadPostToS3({
     fs.unlinkSync(textFilePath);
     let tokens = [];
 
-    if (community.members.length > 0) {
-      for (let u of community.members) {
-        const user = await User.findById(u);
+    // if (community.members.length > 0) {
+    //   for (let u of community.members) {
+    //     const user = await User.findById(u);
 
-        if (user.notificationtoken && user._id.toString()) {
-          tokens.push(user.notificationtoken);
-        }
-      }
+    //     if (user.notificationtoken && user._id.toString()) {
+    //       tokens.push(user.notificationtoken);
+    //     }
+    //   }
 
-      const timestamp = `${new Date()}`;
-      const msg = {
-        notification: {
-          title: `${community.title} - Posted!`,
-          body: `${post.title}`,
-        },
-        data: {
-          screen: "CommunityChat",
-          sender_fullname: `${user?.fullname}`,
-          sender_id: `${user?._id}`,
-          text: `${post.title}`,
-          comId: `${community?._id}`,
-          createdAt: `${timestamp}`,
-        },
-        tokens: tokens,
-      };
+    //   const timestamp = `${new Date()}`;
+    //   const msg = {
+    //     notification: {
+    //       title: `${community.title} - Posted!`,
+    //       body: `${post.title}`,
+    //     },
+    //     data: {
+    //       screen: "CommunityChat",
+    //       sender_fullname: `${user?.fullname}`,
+    //       sender_id: `${user?._id}`,
+    //       text: `${post.title}`,
+    //       comId: `${community?._id}`,
+    //       createdAt: `${timestamp}`,
+    //     },
+    //     tokens: tokens,
+    //   };
 
-      await admin
-        .messaging()
-        .sendMulticast(msg)
-        .then((response) => {
-          console.log("Successfully sent message");
-        })
-        .catch((error) => {
-          console.log("Error sending message:", error);
-        });
-    }
+    //   await admin
+    //     .messaging()
+    //     .sendMulticast(msg)
+    //     .then((response) => {
+    //       console.log("Successfully sent message");
+    //     })
+    //     .catch((error) => {
+    //       console.log("Error sending message:", error);
+    //     });
+    // }
 
     console.log("Post uploaded and saved");
   } catch (error) {
