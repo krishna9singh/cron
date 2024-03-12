@@ -11,7 +11,7 @@ const PostSchema = new mongoose.Schema(
     totalcomments: { type: Number, default: 0 },
     tags: { type: [String] },
     views: { type: Number, default: 0 },
-    title: { type: String, maxLength: 100 },
+    title: { type: String },
     desc: { type: String, maxLength: 500 },
     community: { type: ObjectId, ref: "Community" },
     sender: { type: ObjectId, ref: "User" },
