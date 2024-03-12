@@ -6,6 +6,8 @@ const Interest = require("../models/Interest");
 const User = require("../models/userAuth");
 const Topic = require("../models/topic");
 const Community = require("../models/community");
+const Tag = require("../models/Tags");
+const admin = require("../fireb");
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -29,7 +31,7 @@ const s3 = new S3Client({
   },
 });
 
-const directoryPath = "./content/rvcjinsta";
+const directoryPath = "./content/h";
 
 function findCorrespondingFile({ fileName, extensions }) {
   for (const e of extensions) {
@@ -108,7 +110,7 @@ async function readAndProcessFiles(directoryPath) {
         });
 
         if (present) {
-          const ext = getFileExtension(filePath);
+          const ext = getFileExtension(present);
           let textfile = findCorrespondingTextFile(present);
           allfiles.push({ file: present, textfile: textfile, extension: ext });
         }
@@ -135,19 +137,22 @@ async function readAndProcessFiles(directoryPath) {
 
           console.log(
             textWithoutHashtags,
-            "content",
-            hashtags,
+            //hashtags,
             filePath,
-            fileEntry.extension
+            fileEntry.extension,
+            filePath.endsWith(".txt")
           );
-
-          uploadPostToS3({
-            file: filePath,
-            textWithoutHashtags,
-            hashtags,
-            textFilePath,
-            extension: fileEntry.extension,
-          });
+          // fs.unlinkSync(filePath);
+          // fs.unlinkSync(textFilePath);
+          if (filePath) {
+            uploadPostToS3({
+              file: filePath,
+              textWithoutHashtags,
+              hashtags,
+              textFilePath,
+              extension: fileEntry.extension,
+            });
+          }
         }
         break;
       } else {
@@ -220,7 +225,7 @@ async function uploadPostToS3({
     const savedpost = await post.save();
 
     //updating tags and interests
-    const int = await Interest.findOne({ title: category });
+    const int = await Interest.findOne({ title: "Movies & Entertainment" });
 
     for (let i = 0; i < hashtags?.length; i++) {
       const t = await Tag.findOne({ title: hashtags[i].toLowerCase() });
@@ -263,45 +268,47 @@ async function uploadPostToS3({
       { _id: topic },
       { $push: { posts: savedpost._id }, $inc: { postcount: 1 } }
     );
-
-    let tokens = [];
-
-    for (let u of community.members) {
-      const user = await User.findById(u);
-
-      if (user.notificationtoken && user._id.toString()) {
-        tokens.push(user.notificationtoken);
-      }
-    }
-
-    const timestamp = `${new Date()}`;
-    const msg = {
-      notification: {
-        title: `${community.title} - Posted!`,
-        body: `${post.title}`,
-      },
-      data: {
-        screen: "CommunityChat",
-        sender_fullname: `${user?.fullname}`,
-        sender_id: `${user?._id}`,
-        text: `${post.title}`,
-        comId: `${community?._id}`,
-        createdAt: `${timestamp}`,
-      },
-      tokens: tokens,
-    };
-
-    await admin
-      .messaging()
-      .sendMulticast(msg)
-      .then((response) => {
-        console.log("Successfully sent message");
-      })
-      .catch((error) => {
-        console.log("Error sending message:", error);
-      });
     fs.unlinkSync(file);
     fs.unlinkSync(textFilePath);
+    let tokens = [];
+
+    if (community.members.length > 0) {
+      for (let u of community.members) {
+        const user = await User.findById(u);
+
+        if (user.notificationtoken && user._id.toString()) {
+          tokens.push(user.notificationtoken);
+        }
+      }
+
+      const timestamp = `${new Date()}`;
+      const msg = {
+        notification: {
+          title: `${community.title} - Posted!`,
+          body: `${post.title}`,
+        },
+        data: {
+          screen: "CommunityChat",
+          sender_fullname: `${user?.fullname}`,
+          sender_id: `${user?._id}`,
+          text: `${post.title}`,
+          comId: `${community?._id}`,
+          createdAt: `${timestamp}`,
+        },
+        tokens: tokens,
+      };
+
+      await admin
+        .messaging()
+        .sendMulticast(msg)
+        .then((response) => {
+          console.log("Successfully sent message");
+        })
+        .catch((error) => {
+          console.log("Error sending message:", error);
+        });
+    }
+
     console.log("Post uploaded and saved");
   } catch (error) {
     console.error("Error uploading post:", error);
@@ -309,7 +316,7 @@ async function uploadPostToS3({
 }
 
 // Every 2 hours
-cron.schedule("0 */2 * * *", () => {
+cron.schedule("*/15 * * * * *", () => {
   console.log("Running file reading and processing task...");
   readAndProcessFiles(directoryPath);
 });
