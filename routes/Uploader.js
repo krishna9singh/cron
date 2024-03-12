@@ -112,6 +112,7 @@ async function readAndProcessFiles(directoryPath) {
       }
     });
 
+    allfiles.reverse();
     let i = 0;
     while (i < allfiles.length) {
       let fileEntry = allfiles[i];
@@ -183,18 +184,32 @@ async function uploadPostToS3({
       })
     );
 
-    pos.push({ content: objectName, type: "video/mp4" });
-    console.log(objectName);
+    let contentType;
+    if (extension === ".mp4" || extension === ".avi" || extension === ".mov") {
+      contentType = "video/mp4";
+    } else if (
+      extension === ".jpg" ||
+      extension === ".jpeg" ||
+      extension === ".png"
+    ) {
+      contentType = "image/jpeg";
+    } else {
+      contentType = "image/jpeg";
+    }
+
+    pos.push({ content: objectName, type: contentType });
+
     const post = new Post({
       title: textWithoutHashtags,
-      desc: "sdfg",
-      community: "65d31af686d0b529ceef9d5e",
-      sender: "64a7bd59c9aab1a5960083e0",
+      //desc: "sdfg",
+      community: "65f02ec130c7d8883d995e33",
+      sender: "65d8fca73d35c3613a732d7c",
       post: pos,
       tags: hashtags,
-      topicId: "65dc4df42ea2d3ff8570abed",
+      topicId: "65f02ec130c7d8883d995e35",
+      date: new Date(),
     });
-    const savedpost = await post.save();
+    await post.save();
     fs.unlinkSync(file);
     fs.unlinkSync(textFilePath);
     console.log("Post uploaded and saved");
@@ -203,11 +218,9 @@ async function uploadPostToS3({
   }
 }
 
-// Define the cron schedule (every 15 minutes)
-cron.schedule("*/10 * * * * *", () => {
+// Every 3 hours
+cron.schedule("0 */3 * * *", () => {
   console.log("Running file reading and processing task...");
-
-  // Example usage: Provide the directory path as an argument
   readAndProcessFiles("./content/rvcjinsta");
 });
 
