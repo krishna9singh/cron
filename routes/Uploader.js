@@ -176,11 +176,11 @@ async function uploadPostToS3({
 }) {
   console.log("Uploading file:", file);
 
-  let comId = "65f0d73275d86027b58e1cd3";
+  let comId = "65f16af975d86027b58e1ce3";
   const community = await Community.findById(comId);
-  let sender = "65d8f8e3677eef6864f04c36";
+  let sender = "65d8f8e5677eef6864f0533e";
   const user = await User.findById(sender);
-  let topic = "65f0d73275d86027b58e1cd5";
+  let topic = "65f16af975d86027b58e1ce5";
 
   try {
     let pos = [];
