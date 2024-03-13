@@ -7,7 +7,6 @@ const User = require("../models/userAuth");
 const Topic = require("../models/topic");
 const Community = require("../models/community");
 const Tag = require("../models/Tags");
-const admin = require("../fireb");
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
