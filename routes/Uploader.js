@@ -315,7 +315,7 @@ async function uploadPostToS3({
 }
 
 // Every 2 hours
-cron.schedule("0 0 */1 * *", () => {
+cron.schedule("0 */11 * * *", () => {
   console.log("Running file reading and processing task...");
   readAndProcessFiles(directoryPath);
 });
