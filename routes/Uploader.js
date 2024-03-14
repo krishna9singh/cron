@@ -176,11 +176,11 @@ async function uploadPostToS3({
 }) {
   console.log("Uploading file:", file);
 
-  let comId = "65f19f0eb77ea7592a5d340c";
+  let comId = "65f1bc67b77ea7592a5d341d";
   const community = await Community.findById(comId);
-  let sender = "65d8f8f1677eef6864f0772e";
+  let sender = "65d8f8f1677eef6864f077f6";
   const user = await User.findById(sender);
-  let topic = "65f19f0fb77ea7592a5d340e";
+  let topic = "65f1bc67b77ea7592a5d341f";
 
   try {
     let pos = [];
@@ -315,7 +315,7 @@ async function uploadPostToS3({
 }
 
 // Every 22 hours
-cron.schedule("0 */23 * * *", () => {
+cron.schedule("0 */29 * * *", () => {
   console.log("Running file reading and processing task...");
   readAndProcessFiles(directoryPath);
 });
