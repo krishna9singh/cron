@@ -176,11 +176,11 @@ async function uploadPostToS3({
 }) {
   console.log("Uploading file:", file);
 
-  let comId = "65f194efb77ea7592a5d32e9";
+  let comId = "65f1bdefb77ea7592a5d342e";
   const community = await Community.findById(comId);
-  let sender = "65d8f8ef677eef6864f07026";
+  let sender = "65d8f8f2677eef6864f078be";
   const user = await User.findById(sender);
-  let topic = "65f194efb77ea7592a5d32eb";
+  let topic = "65f1bdefb77ea7592a5d3430";
 
   try {
     let pos = [];
@@ -224,7 +224,7 @@ async function uploadPostToS3({
     const savedpost = await post.save();
 
     //updating tags and interests
-    const int = await Interest.findOne({ title: "Movies & Entertainment" });
+    const int = await Interest.findOne({ title: "Beauty & Fashion" });
 
     for (let i = 0; i < hashtags?.length; i++) {
       const t = await Tag.findOne({ title: hashtags[i].toLowerCase() });
